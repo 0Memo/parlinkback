@@ -11,12 +11,16 @@ import { CustomHttpExceptionFilter } from './filters/custom-exception.filters';
 import { LoggingInterceptor } from './interceptors/logging.interceptors';
 import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
+import helmet from '@fastify/helmet';
 
 async function bootstrap() {
   console.log('Application NestJS en cours de démarrage...');
 
   const app = await NestFactory.create(AppModule);
   console.log('Application NestJS créée.');
+
+  app.use(helmet());
+  console.log('Helmet configuré.');
 
   const localhostUrl = process.env.LOCALHOST_URL;
   const ipv4Url = process.env.IPV4_URL;
@@ -42,6 +46,18 @@ async function bootstrap() {
 
   app.use(compression());
   console.log('Compression configuré.');
+
+  // Redirect HTTP to HTTPS (only in production)
+  if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+      if (req.header('x-forwarded-proto') !== 'https') {
+        res.redirect(`https://${req.header('host')}${req.url}`);
+      } else {
+        next();
+      }
+    });
+    console.log('Redirection HTTP vers HTTPS activée.');
+  }
 
   const config = new DocumentBuilder()
   .setTitle('alt-bootcamp')
