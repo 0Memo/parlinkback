@@ -12,6 +12,10 @@ import { redisStore } from 'cache-manager-redis-yet';
                 store: await redisStore({
                     url: process.env.REDIS_URL,
                     ttl: 600,
+                    socket: {
+                        tls: true,
+                        rejectUnauthorized: false, // Ignore self-signed certificate issues
+                    },
                 }),
             }),
         }),
