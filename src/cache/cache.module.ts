@@ -15,15 +15,15 @@ import { redisStore } from 'cache-manager-redis-yet';
                         ttl: 600,
                         socket: {
                             tls: true,
-                            rejectUnauthorized: false, // Ignore self-signed certificate issues
-                            connectTimeout: 10000, // Set connection timeout to 10 seconds
+                            rejectUnauthorized: false,
+                            connectTimeout: 10000,
                         },
                     });
 
-                    return { store }; // Return the store object
+                    return { store };
                 } catch (error) {
                     console.error('Redis connection error:', error);
-                    throw error; // Rethrow the error for NestJS to handle
+                    throw error;
                 }
             },
         }),
