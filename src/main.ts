@@ -5,13 +5,14 @@ import compression from 'compression';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, HttpStatus } from '@nestjs/common';
 import { HttpExceptionFilter } from './filters/http-exception.filters';
 import { CustomHttpExceptionFilter } from './filters/custom-exception.filters';
 import { LoggingInterceptor } from './interceptors/logging.interceptors';
 import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 import helmet from 'helmet';
+import { Request, Response } from 'express';
 
 async function bootstrap() {
   console.log('Application NestJS en cours de démarrage...');
@@ -34,6 +35,18 @@ async function bootstrap() {
     credentials: true,
   });
   console.log(`CORS configurés`);
+
+  const expressApp = app.getHttpAdapter().getInstance();
+
+  // Add OPTIONS handling for preflight requests
+  expressApp.options('*', (req: Request, res: Response) => {
+    res.header('Access-Control-Allow-Origin', req.get('origin') || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Origin, X-Requested-With, Accept, Authorization, refresh_token');
+    res.header('Access-Control-Expose-Headers', 'Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.sendStatus(HttpStatus.NO_CONTENT);
+  });
 
   app.useGlobalPipes(new ValidationPipe());
   console.log(`Global validation pipe configuré.`);
