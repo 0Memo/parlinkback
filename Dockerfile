@@ -11,6 +11,8 @@ WORKDIR /usr/app
 # This command uses package-lock.json to install dependencies.
 COPY package.json ./
 
+COPY prisma ./prisma
+
 # Install the dependencies
 RUN npm install
 
