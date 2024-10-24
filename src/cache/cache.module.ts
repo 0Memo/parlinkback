@@ -8,16 +8,24 @@ import { redisStore } from 'cache-manager-redis-yet';
 @Module({
     imports: [
         CacheModule.registerAsync({
-            useFactory: async () => ({                
-                store: await redisStore({
-                    url: process.env.REDIS_URL,
-                    ttl: 600,
-                    socket: {
-                        tls: true,
-                        rejectUnauthorized: false, // Ignore self-signed certificate issues
-                    },
-                }),
-            }),
+            useFactory: async () => {
+                try {
+                    const store = await redisStore({
+                        url: process.env.REDIS_URL,
+                        ttl: 600,
+                        socket: {
+                            tls: true,
+                            rejectUnauthorized: false, // Ignore self-signed certificate issues
+                            connectTimeout: 10000, // Set connection timeout to 10 seconds
+                        },
+                    });
+
+                    return { store }; // Return the store object
+                } catch (error) {
+                    console.error('Redis connection error:', error);
+                    throw error; // Rethrow the error for NestJS to handle
+                }
+            },
         }),
     ],
     providers: [CacheService],
