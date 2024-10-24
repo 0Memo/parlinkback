@@ -11,7 +11,7 @@ import { CustomHttpExceptionFilter } from './filters/custom-exception.filters';
 import { LoggingInterceptor } from './interceptors/logging.interceptors';
 import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
-import helmet from '@fastify/helmet';
+import helmet from 'helmet';
 
 async function bootstrap() {
   console.log('Application NestJS en cours de démarrage...');
@@ -33,21 +33,20 @@ async function bootstrap() {
     exposedHeaders: ['Authorization'],
     credentials: true,
   });
-  console.log('CORS configuré');
+  console.log(`CORS configurés`);
 
   app.useGlobalPipes(new ValidationPipe());
-  console.log('Global validation pipe configuré.');
+  console.log(`Global validation pipe configuré.`);
 
   app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor(), new SetHeadersInterceptor());
-  console.log('Interceptors configurés.');
+  console.log(`Interceptors configurés.`);
 
   app.useGlobalFilters(new HttpExceptionFilter(), new CustomHttpExceptionFilter());
-  console.log('Global exception filters configurés.');
+  console.log(`Global exception filters configurés.`);
 
   app.use(compression());
-  console.log('Compression configuré.');
+  console.log(`Compression configurée.`);
 
-  // Redirect HTTP to HTTPS (only in production)
   if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {
       if (req.header('x-forwarded-proto') !== 'https') {
@@ -56,7 +55,8 @@ async function bootstrap() {
         next();
       }
     });
-    console.log('Redirection HTTP vers HTTPS activée.');
+
+    console.log(`Redirection HTTP vers HTTPS activée.`);
   }
 
   const config = new DocumentBuilder()
@@ -67,7 +67,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  console.log('Documentation Swagger documentation configurée.');
+  console.log(`Documentation Swagger documentation configurée.`);
+
   await app.listen(process.env.PORT || 3000);
   console.log(`L'application NestJS écoute sur le port 3000.`);
 }
