@@ -8,7 +8,7 @@ RUN apt-get update -y && \
 WORKDIR /usr/app
 
 # Install app dependencies using the `npm ci` command.
-# This command uses package-lock.json to install dependencies.
+# This command uses package.json to install dependencies.
 COPY package.json ./
 
 COPY prisma ./prisma
