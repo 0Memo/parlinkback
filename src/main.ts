@@ -86,4 +86,4 @@ async function bootstrap() {
   console.log(`L'application NestJS écoute sur le port 3000.`);
 }
 
-export const handler = bootstrap();
+export default bootstrap;
