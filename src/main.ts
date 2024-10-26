@@ -12,7 +12,7 @@ import { LoggingInterceptor } from './interceptors/logging.interceptors';
 import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 import helmet from 'helmet';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 
 async function bootstrap() {
   console.log('Application NestJS en cours de démarrage...');
@@ -61,7 +61,7 @@ async function bootstrap() {
   console.log(`Compression configurée.`);
 
   if (process.env.NODE_ENV === 'production') {
-    app.use((req: Request, res: Response, next: NextFunction) => {
+    app.use((req, res, next) => {
       if (req.header('x-forwarded-proto') !== 'https') {
         res.redirect(`https://${req.header('host')}${req.url}`);
       } else {
