@@ -12,7 +12,7 @@ import { LoggingInterceptor } from './interceptors/logging.interceptors';
 import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 import helmet from 'helmet';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   console.log('Application NestJS en cours de démarrage...');
@@ -28,7 +28,7 @@ async function bootstrap() {
   const vercelUrl = process.env.VERCEL_URL;
 
   app.enableCors({
-    origin: [localhostUrl, ipv4Url, vercelUrl],
+    origin: [localhostUrl, ipv4Url, vercelUrl].filter((url): url is string => !!url),
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization','refresh_token'],
     exposedHeaders: ['Authorization'],
@@ -61,7 +61,7 @@ async function bootstrap() {
   console.log(`Compression configurée.`);
 
   if (process.env.NODE_ENV === 'production') {
-    app.use((req, res, next) => {
+    app.use((req: Request, res: Response, next: NextFunction) => {
       if (req.header('x-forwarded-proto') !== 'https') {
         res.redirect(`https://${req.header('host')}${req.url}`);
       } else {
