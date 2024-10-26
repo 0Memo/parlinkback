@@ -28,7 +28,7 @@ async function bootstrap() {
   const vercelUrl = process.env.VERCEL_URL;
 
   app.enableCors({
-    origin: [localhostUrl, ipv4Url, vercelUrl].filter((url): url is string => !!url),
+    origin: [localhostUrl, ipv4Url, vercelUrl],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization','refresh_token'],
     exposedHeaders: ['Authorization'],
@@ -82,8 +82,18 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
   console.log(`Documentation Swagger documentation configurée.`);
 
-  await app.listen(process.env.PORT || 3000);
-  console.log(`L'application NestJS écoute sur le port 3000.`);
+  const port = process.env.PORT || 3000;
+  
+  try {
+    await app.listen(port);
+    console.log(`L'application NestJS écoute sur le port ${port}.`);
+  } catch (error) {
+    console.error(`Erreur au démarrage de l'application:`, error);
+  }
 }
 
 export default bootstrap;
+
+bootstrap().catch((error) => {
+  console.error(`Le démarrage de l'application a échoué:`, error);
+});
