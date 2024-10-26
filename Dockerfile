@@ -11,10 +11,11 @@ WORKDIR /usr/app
 # This command uses package.json to install dependencies.
 COPY package.json ./
 
+COPY prisma ./prisma
+
 # Install the dependencies
 RUN npm install
 
-COPY prisma ./prisma
 # Generate Prisma client
 RUN npx prisma generate
 
