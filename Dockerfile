@@ -10,6 +10,7 @@ WORKDIR /usr/app
 # Install app dependencies using the `npm ci` command.
 # This command uses package.json to install dependencies.
 COPY package.json ./
+COPY tsconfig.json ./
 COPY tsconfig.build.json ./
 COPY prisma ./prisma
 
