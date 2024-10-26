@@ -215,8 +215,8 @@ const generateUserHasSubjects = (userId: string, subjectIds: string[]) => {
     return userHasSubjects;
 };
 
-const generateUserHasChildren = (userId, childIds) => {
-    const result = [];
+const generateUserHasChildren = (userId: string, childIds: string[]): { userId: string; childId: string }[] => {
+    const result: { userId: string; childId: string }[] = [];
     childIds.forEach(childId => {
         const pair = { userId: userId, childId: childId };
         result.push(pair);
