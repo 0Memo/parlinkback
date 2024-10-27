@@ -28,14 +28,22 @@ async function bootstrap() {
   const vercelUrl = process.env.VERCEL_URL;
   const vercelBackendUrl = process.env.VERCEL_BACKEND_URL;
 
+  const corsOrigins = [localhostUrl, ipv4Url, vercelUrl, vercelBackendUrl].filter((url): url is string => !!url);
+
   app.enableCors({
-    origin: [localhostUrl, ipv4Url, vercelUrl, vercelBackendUrl].filter((url): url is string => !!url),
+    origin: (origin, callback) => {
+      if (corsOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Non autorisés par CORS`));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization','refresh_token'],
     exposedHeaders: ['Authorization'],
     credentials: true,
   });
-  console.log(`CORS configurés`);
+  console.log(`CORS configurés:`, corsOrigins);
 
   const expressApp = app.getHttpAdapter().getInstance();
 
