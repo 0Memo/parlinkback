@@ -69,18 +69,6 @@ async function bootstrap() {
   app.use(compression());
   console.log(`Compression configurée.`);
 
-  if (process.env.NODE_ENV === 'production') {
-    app.use((req, res, next) => {
-      if (req.header('x-forwarded-proto') !== 'https') {
-        res.redirect(`https://${req.header('host')}${req.url}`);
-      } else {
-        next();
-      }
-    });
-
-    console.log(`Redirection HTTP vers HTTPS activée.`);
-  }
-
   const config = new DocumentBuilder()
   .setTitle('alt-bootcamp')
   .setDescription('The alt-bootcamp API description')
