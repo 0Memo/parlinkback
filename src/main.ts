@@ -20,7 +20,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   console.log('Application NestJS créée.');
 
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }));
   console.log('Helmet configuré.');
 
   const localhostUrl = process.env.LOCALHOST_URL;
