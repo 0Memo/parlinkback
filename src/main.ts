@@ -26,9 +26,10 @@ async function bootstrap() {
   const localhostUrl = process.env.LOCALHOST_URL;
   const ipv4Url = process.env.IPV4_URL;
   const vercelUrl = process.env.VERCEL_URL;
+  const vercelBackendUrl = process.env.VERCEL_BACKEND_URL;
 
   app.enableCors({
-    origin: [localhostUrl, ipv4Url, vercelUrl],
+    origin: [localhostUrl, ipv4Url, vercelUrl, vercelBackendUrl].filter((url): url is string => !!url),
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization','refresh_token'],
     exposedHeaders: ['Authorization'],
