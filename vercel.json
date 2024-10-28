@@ -1,7 +1,11 @@
 {
     "version": 2,
     "functions": {
-        "api/main.js": {}
+        "api/main.js": {
+        "runtime": "nodejs18.x",
+        "memory": 512,
+        "maxDuration": 10
+        }
     },
     "routes": [
         {
