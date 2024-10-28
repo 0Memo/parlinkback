@@ -2,8 +2,7 @@
     "version": 2,
     "functions": {
         "api/main.js": {
-            "runtime": "nodejs16.x",
-            "source": "dist/src/main.js"
+            "runtime": "nodejs16.x"
         }
     },
     "routes": [
