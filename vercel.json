@@ -1,9 +1,7 @@
 {
     "version": 2,
     "functions": {
-        "api/main.js": {
-            "runtime": "nodejs18.x"
-        }
+        "api/main.js": {}
     },
     "routes": [
         {
