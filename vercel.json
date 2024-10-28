@@ -1,9 +1,15 @@
 {
     "version": 2,
+    "functions": {
+        "api/main.js": {
+            "runtime": "nodejs16.x",
+            "handler": "dist/src/main.js"
+        }
+    },
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "dist/src/main.js"
+            "dest": "api/main.js"
         }
     ]
 }
