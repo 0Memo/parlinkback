@@ -4,8 +4,7 @@ dotenv.config();
 import compression from 'compression';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe, HttpStatus } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './filters/http-exception.filters';
 import { CustomHttpExceptionFilter } from './filters/custom-exception.filters';
 import { LoggingInterceptor } from './interceptors/logging.interceptors';
@@ -14,14 +13,11 @@ import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 import helmet from 'helmet';
 import { Request, Response } from 'express';
 
-async function bootstrap() {
+async function createNestServer() {
   console.log('Application NestJS en cours de démarrage...');
 
   const app = await NestFactory.create(AppModule);
   console.log('Application NestJS créée.');
-
-  app.setGlobalPrefix('api');
-  console.log('Préfixe global "api" configuré pour les routes.');
 
   app.use(helmet({
     contentSecurityPolicy: false,
@@ -29,39 +25,8 @@ async function bootstrap() {
   }));
   console.log('Helmet configuré.');
 
-  const localhostUrl = process.env.LOCALHOST_URL;
-  const ipv4Url = process.env.IPV4_URL;
-  const vercelUrl = process.env.VERCEL_URL;
-  const vercelBackendUrl = process.env.VERCEL_BACKEND_URL;
-
-  const corsOrigins = [localhostUrl, ipv4Url, vercelUrl, vercelBackendUrl].filter((url): url is string => !!url);
-
-  app.enableCors({
-    origin: (origin, callback) => {
-      if (corsOrigins.includes(origin) || !origin) {
-        callback(null, true);
-      } else {
-        callback(new Error(`Non autorisés par CORS`));
-      }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization','refresh_token'],
-    exposedHeaders: ['Authorization'],
-    credentials: true,
-  });
-  console.log(`CORS configurés:`, corsOrigins);
-
-  const expressApp = app.getHttpAdapter().getInstance();
-
-  // Add OPTIONS handling for preflight requests
-  expressApp.options('*', (req: Request, res: Response) => {
-    res.header('Access-Control-Allow-Origin', req.get('origin') || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Origin, X-Requested-With, Accept, Authorization, refresh_token');
-    res.header('Access-Control-Expose-Headers', 'Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.sendStatus(HttpStatus.NO_CONTENT);
-  });
+  app.use(compression());
+  console.log(`Compression configurée.`);
 
   app.useGlobalPipes(new ValidationPipe());
   console.log(`Global validation pipe configuré.`);
@@ -72,31 +37,34 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter(), new CustomHttpExceptionFilter());
   console.log(`Global exception filters configurés.`);
 
-  app.use(compression());
-  console.log(`Compression configurée.`);
+  const localhostUrl = process.env.LOCALHOST_URL;
+  const ipv4Url = process.env.IPV4_URL;
+  const vercelUrl = process.env.VERCEL_URL;
+  const vercelBackendUrl = process.env.VERCEL_BACKEND_URL;
 
-  const config = new DocumentBuilder()
-  .setTitle('alt-bootcamp')
-  .setDescription('The alt-bootcamp API description')
-  .setVersion('0.1')
-  .build();
+  const corsOrigins = [localhostUrl, ipv4Url, vercelUrl, vercelBackendUrl].filter(Boolean);
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-  console.log(`Documentation Swagger documentation configurée.`);
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (corsOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Non autorisé par CORS`));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization','refresh_token'],
+    exposedHeaders: ['Authorization'],
+    credentials: true,
+  });
+  console.log(`CORS configurés:`, corsOrigins);
 
-  const port = process.env.PORT || 3000;
-  
-  try {
-    await app.listen(port);
-    console.log(`L'application NestJS écoute sur le port ${port}.`);
-  } catch (error) {
-    console.error(`Erreur au démarrage de l'application:`, error);
-  }
+  return app;
+
 }
 
-export default bootstrap;
-
-bootstrap().catch((error) => {
-  console.error(`Le démarrage de l'application a échoué:`, error);
-});
+export default async (req: Request, res: Response) => {
+  const app = await createNestServer();
+  await app.init();
+  app.getHttpAdapter().getInstance().handle(req, res);
+};

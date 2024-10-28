@@ -1,8 +1,7 @@
 {
     "version": 2,
     "functions": {
-        "api/main.js": {
-        "runtime": "nodejs18.x",
+        "dist/src/main.js": {
         "memory": 512,
         "maxDuration": 10
         }
@@ -10,7 +9,7 @@
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "api/main.js"
+            "dest": "dist/src/main.js"
         }
     ]
 }
