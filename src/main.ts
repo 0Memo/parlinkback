@@ -37,12 +37,12 @@ async function createNestServer() {
   app.useGlobalFilters(new HttpExceptionFilter(), new CustomHttpExceptionFilter());
   console.log(`Global exception filters configurés.`);
 
-  const localhostUrl = process.env.LOCALHOST_URL;
-  const ipv4Url = process.env.IPV4_URL;
-  const vercelUrl = process.env.VERCEL_URL;
-  const vercelBackendUrl = process.env.VERCEL_BACKEND_URL;
-
-  const corsOrigins = [localhostUrl, ipv4Url, vercelUrl, vercelBackendUrl].filter(Boolean);
+  const corsOrigins = [
+    process.env.LOCALHOST_URL,
+    process.env.IPV4_URL,
+    process.env.VERCEL_URL,
+    process.env.VERCEL_BACKEND_URL
+  ].filter(Boolean);
 
   app.enableCors({
     origin: (origin, callback) => {
@@ -59,12 +59,12 @@ async function createNestServer() {
   });
   console.log(`CORS configurés:`, corsOrigins);
 
-  return app;
+  await app.init();
+  return app.getHttpAdapter().getInstance();
 
 }
 
 export default async (req: Request, res: Response) => {
-  const app = await createNestServer();
-  await app.init();
-  app.getHttpAdapter().getInstance().handle(req, res);
+  const server = await createNestServer();
+  server(req, res);
 };
