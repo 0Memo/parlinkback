@@ -1,10 +1,7 @@
 {
     "version": 2,
     "functions": {
-        "api/**/*.ts": {
-        "runtime": "@vercel/node"
-        },
-        "api/**/*.js": {
+        "dist/src/main.js": {
         "runtime": "@vercel/node"
         }
     },
