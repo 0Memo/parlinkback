@@ -14,10 +14,12 @@ import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 /* import helmet from 'helmet'; */
 import { Request, Response } from 'express';
 
+let app;
+
 async function bootstrap() {
   console.log('Application NestJS en cours de démarrage...');
 
-  const app = await NestFactory.create(AppModule);
+  app = await NestFactory.create(AppModule);
   console.log('Application NestJS créée.');
 
   /* app.use(helmet());
@@ -82,15 +84,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   console.log(`Documentation Swagger documentation configurée.`);
-
-  const port = process.env.PORT || 3000;
-  
-  try {
-    await app.listen(port);
-    console.log(`L'application NestJS écoute sur le port ${port}.`);
-  } catch (error) {
-    console.error(`Erreur au démarrage de l'application:`, error);
-  }
 }
 
-export default bootstrap;
+export default async function handler(req: Request, res: Response) {
+  if (!app) {
+    await bootstrap();
+  }
+  app.getHttpAdapter().getInstance()(req, res);
+}
