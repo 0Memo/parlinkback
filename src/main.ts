@@ -14,7 +14,7 @@ import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 /* import helmet from 'helmet'; */
 import { Request, Response } from 'express';
 
-let app;
+let app: any;
 
 async function bootstrap() {
   console.log('Application NestJS en cours de démarrage...');
@@ -84,11 +84,47 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   console.log(`Documentation Swagger documentation configurée.`);
+
+  const port = process.env.PORT || 3000;
+
+  try {
+    await app.listen(port);
+    console.log(`NestJS application is listening on port ${port}.`);
+  } catch (error) {
+    console.error(`Error starting application:`, error);
+  }
 }
 
 export default async function handler(req: Request, res: Response) {
   if (!app) {
-    await bootstrap();
+    await bootstrap(); // Initialize the application only once
   }
-  app.getHttpAdapter().getInstance()(req, res);
+
+  // Handle incoming requests
+  try {
+    // You can add logic here to quickly respond to requests
+    if (req.method === 'GET') {
+      res.status(200).send('Request is being processed...');
+      
+      // Process the request asynchronously if needed
+      setTimeout(async () => {
+        console.log('Processing data...');
+
+        // Replace with your actual function or logic
+        await processData(); // Simulated async processing function
+
+        console.log('Data processed successfully!');
+      }, 100); // Use a small timeout for demo purposes
+    } else {
+      res.status(405).send('Method Not Allowed');
+    }
+  } catch (error) {
+    console.error('Error handling request:', error);
+    res.status(500).send('Internal Server Error');
+  }
+}
+
+async function processData() {
+  // Simulate a long-running task
+  return new Promise((resolve) => setTimeout(resolve, 3000)); // Simulating a delay of 3 seconds
 }
