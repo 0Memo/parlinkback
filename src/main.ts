@@ -20,12 +20,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   console.log('Application NestJS créée.');
 
-  app.setGlobalPrefix('api');
-  console.log('Préfixe global "api" configuré pour les routes.');
-
   app.use(helmet({
     contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
+    crossOriginEmbedderPolicy: false
   }));
   console.log('Helmet configuré.');
 

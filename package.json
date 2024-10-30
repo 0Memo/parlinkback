@@ -6,9 +6,10 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "tsc && prisma generate",
+    "build": "nest build",
+    "postinstall": "prisma generate && npm run build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "node dist/src/main.js",
     "start:prod": "node dist/src/main.js",
     "start:dev": "ts-node-dev --watch src --project tsconfig.json src/main.ts",
     "start:debug": "nest start --debug --watch",

@@ -10,17 +10,17 @@ WORKDIR /usr/app
 # Install app dependencies using the `npm ci` command.
 # This command uses package.json to install dependencies.
 COPY package.json ./
-COPY tsconfig.json ./
+
 COPY prisma ./prisma
 
 # Install the dependencies
 RUN npm install
 
-# Generate Prisma client
-RUN npx prisma generate
-
 # Copy the app files to the container.
 COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
 
 # Build the application => TJ => JS
 RUN npm run build
