@@ -94,7 +94,3 @@ async function bootstrap() {
 }
 
 export default bootstrap;
-
-bootstrap().catch((error) => {
-  console.error(`Le démarrage de l'application a échoué:`, error);
-});

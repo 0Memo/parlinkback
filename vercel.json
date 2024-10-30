@@ -1,5 +1,10 @@
 {
     "version": 2,
+    "functions": {
+        "dist/src/main.js": {
+        "runtime": "@vercel/node"
+        }
+    },
     "routes": [
         {
             "src": "/(.*)",
