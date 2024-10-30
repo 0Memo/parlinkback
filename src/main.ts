@@ -11,7 +11,7 @@ import { CustomHttpExceptionFilter } from './filters/custom-exception.filters';
 import { LoggingInterceptor } from './interceptors/logging.interceptors';
 import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
-import helmet from 'helmet';
+/* import helmet from 'helmet'; */
 import { Request, Response } from 'express';
 
 async function bootstrap() {
@@ -20,33 +20,22 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   console.log('Application NestJS créée.');
 
-  app.use(helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false
-  }));
-  console.log('Helmet configuré.');
+  /* app.use(helmet());
+  console.log('Helmet configuré.'); */
 
-  const localhostUrl = process.env.LOCALHOST_URL;
+/*  const localhostUrl = process.env.LOCALHOST_URL;
   const ipv4Url = process.env.IPV4_URL;
   const vercelUrl = process.env.VERCEL_URL;
-  const vercelBackendUrl = process.env.VERCEL_BACKEND_URL;
-
-  const corsOrigins = [localhostUrl, ipv4Url, vercelUrl, vercelBackendUrl].filter((url): url is string => !!url);
+  const vercelBackendUrl = process.env.VERCEL_URL; */
 
   app.enableCors({
-    origin: (origin, callback) => {
-      if (corsOrigins.includes(origin) || !origin) {
-        callback(null, true);
-      } else {
-        callback(new Error(`Non autorisés par CORS`));
-      }
-    },
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization','refresh_token'],
     exposedHeaders: ['Authorization'],
     credentials: true,
   });
-  console.log(`CORS configurés:`, corsOrigins);
+  console.log(`CORS configurés`);
 
   const expressApp = app.getHttpAdapter().getInstance();
 
@@ -71,6 +60,18 @@ async function bootstrap() {
 
   app.use(compression());
   console.log(`Compression configurée.`);
+
+  if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+      if (req.header('x-forwarded-proto') !== 'https') {
+        res.redirect(`https://${req.header('host')}${req.url}`);
+      } else {
+        next();
+      }
+    });
+
+    console.log(`Redirection HTTP vers HTTPS activée.`);
+  }
 
   const config = new DocumentBuilder()
   .setTitle('alt-bootcamp')
