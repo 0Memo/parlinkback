@@ -95,6 +95,9 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
   console.log(`Documentation Swagger documentation configurée.`);
 
+  await app.init();
+  console.log(`Application initialisée.`);
+
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`L'application NestJS écoute sur le port ${port}.`);
@@ -105,5 +108,5 @@ export default async function handler(req: Request, res: Response) {
     await bootstrap();
   }
 
-  res.status(200).send(`Le serveur NestJS server est prêt.`);
+  app.getHttpAdapter().getInstance()(req, res);
 }
