@@ -12,9 +12,11 @@ import { LoggingInterceptor } from './interceptors/logging.interceptors';
 import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 /* import helmet from 'helmet'; */
+import * as redis from 'redis';
 import { Request, Response } from 'express';
 
 let app: any;
+let redisClient: redis.RedisClientType;
 
 async function bootstrap() {
   console.log(`Application NestJS en cours de démarrage...`);
@@ -29,6 +31,14 @@ async function bootstrap() {
   const ipv4Url = process.env.IPV4_URL;
   const vercelUrl = process.env.VERCEL_URL;
   const vercelBackendUrl = process.env.VERCEL_URL; */
+
+  redisClient = redis.createClient({
+    url: process.env.REDIS_URL,
+    socket: {
+      reconnectStrategy: () => 1000
+    }
+  });
+  await redisClient.connect();
 
   app.enableCors({
     origin: '*',
