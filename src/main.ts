@@ -17,10 +17,10 @@ import { Request, Response } from 'express';
 let app: any;
 
 async function bootstrap() {
-  console.log('Application NestJS en cours de démarrage...');
+  console.log(`Application NestJS en cours de démarrage...`);
 
   app = await NestFactory.create(AppModule);
-  console.log('Application NestJS créée.');
+  console.log(`Application NestJS créée.`);
 
   /* app.use(helmet());
   console.log('Helmet configuré.'); */
