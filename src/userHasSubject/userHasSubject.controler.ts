@@ -1,9 +1,9 @@
 /* eslint-disable prettier/prettier */
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpStatus, HttpException, Res } from '@nestjs/common';
+import { Controller, /* Get, */ Post, Body, /* Patch, */ Param, Delete, /* Query, */ HttpStatus, HttpException, /* Res */ } from '@nestjs/common';
 import {UserHasSubjectService } from './userHasSubject.service';
-import { CreateSubjectDto } from './dto/create-subject.dto';
-import { UpdateSubjectDto } from './dto/update-subject.dto';
-import { Prisma,UserHasSubjects } from '@prisma/client';
+// import { CreateSubjectDto } from './dto/create-subject.dto';
+// import { UpdateSubjectDto } from './dto/update-subject.dto';
+import { /* Prisma, */UserHasSubjects } from '@prisma/client';
 import { CreateUHSDto } from './dto/userHasSubjectdto';
 
 @Controller('uhs')

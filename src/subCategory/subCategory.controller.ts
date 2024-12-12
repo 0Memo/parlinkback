@@ -17,7 +17,8 @@ export class SubCategoryController {
   async create(@Body() data: CreateSubCategoryDto): Promise<{subCategory: SubCategory, message: string}> {
 
     const subCategory = await this.subCategoryService.findByUnique({
-      name : data.name
+      name : data.name,
+      id: ''
     })
 
     if (!subCategory) throw new HttpException(`La sous-catégorie n'existe pas`, HttpStatus.CONFLICT)

@@ -97,6 +97,7 @@ export class AuthController {
     async login(
         @Body() data: LoginUserDto
     ): Promise<{ access_token: string, refresh_token: string, message: string }> {
+        console.log('Login attempt received:', data);
 
         try {
             const user = await this.userService.findByUnique({ email: data.email});
@@ -114,14 +115,15 @@ export class AuthController {
             const refresh_token = await this.jwtService.signAsync(payload, { secret: process.env.JWT_REFRESH_TOKEN, expiresIn: '1d' });
 
             await this.userService.update({ id: payload.userId }, { refreshToken: refresh_token });
+            console.log("Login successful for user:", user.email);
             return {
                 access_token,
                 refresh_token,
                 message: `Vous êtes bien connecté`,
             }
         } catch (error) {
-            console.error(`Erreur de connexion:`, error);
-            throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+            console.error(`Erreur de connexion:`, error.message, error.stack);
+            throw error;
         }
     }
 
@@ -153,34 +155,34 @@ export class AuthController {
     @Post('refresh_token')
     async refreshTokens(
         @GetToken() refresh_token_in: string): Promise<{ access_token: string, refresh_token: string, message: string }> {
-    //   @Headers('refresh_token') refresh_token_in: string,
-    // ): Promise<{ access_token: string, refresh_token: string, message: string }> {
+        //   @Headers('refresh_token') refresh_token_in: string,
+        // ): Promise<{ access_token: string, refresh_token: string, message: string }> {
 
-    if (!refresh_token_in) {
-        throw new UnauthorizedException('No refresh token provided',refresh_token_in);
-    }
+        if (!refresh_token_in) {
+            throw new UnauthorizedException('No refresh token provided',refresh_token_in);
+        }
 
-    const user = await this.userService.findByRefreshToken(refresh_token_in);
+        const user = await this.userService.findByRefreshToken(refresh_token_in);
 
-    if (!user) {
-        throw new UnauthorizedException('Invalid refresh token',refresh_token_in);
-    }
+        if (!user) {
+            throw new UnauthorizedException('Invalid refresh token',refresh_token_in);
+        }
 
-    const payload = { userId: user.id, role: user.role };
-    const access_token = await this.jwtService.signAsync(payload, { secret: process.env.JWT_SECRET, expiresIn: '2m' })
-    const refresh_token = await this.jwtService.signAsync(payload, { secret: process.env.JWT_REFRESH_TOKEN, expiresIn: '1d' });
-    this.userService.update({ id: payload.userId }, { refreshToken: refresh_token });
-    
+        const payload = { userId: user.id, role: user.role };
+        const access_token = await this.jwtService.signAsync(payload, { secret: process.env.JWT_SECRET, expiresIn: '2m' })
+        const refresh_token = await this.jwtService.signAsync(payload, { secret: process.env.JWT_REFRESH_TOKEN, expiresIn: '3d' });
+        this.userService.update({ id: payload.userId }, { refreshToken: refresh_token });
+        
 
-    // Supprimez les champs sensibles avant de retourner l'utilisateur
-    delete user.password;
-    delete user.refreshToken;
+        // Supprimez les champs sensibles avant de retourner l'utilisateur
+        delete user.password;
+        delete user.refreshToken;
 
-    return {
-        access_token,
-        refresh_token,
-        message: 'Refresh token OK',
-    };
+        return {
+            access_token,
+            refresh_token,
+            message: 'Refresh token OK',
+        };
     }
 
 }

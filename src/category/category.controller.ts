@@ -23,7 +23,8 @@ export class CategoryController {
   async create(@Body() data: CreateCategoryDto): Promise<{category: Category, message: string}> {
 
     const category = await this.categoryService.findByUnique({
-      name : data.name
+      name: data.name,
+      id: ''
     })
 
     if (!category) throw new HttpException(`La catégorie n'existe pas`, HttpStatus.CONFLICT)

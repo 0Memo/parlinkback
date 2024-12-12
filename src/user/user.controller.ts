@@ -75,7 +75,10 @@ export class UserController {
       if (data.subjects) {
           const subjects = data.subjects;
           await Promise.all(subjects.map(async (sub) => {
-              const subject = await this.subjectService.findByUnique({ name: sub });
+              const subject = await this.subjectService.findByUnique({
+                name: sub,
+                id: ""
+              });
               if (subject) {
                   const new_user_has_subject = await this.userHasSubjectService.create({ userId: new_user.id, subjectId: subject["id"] });
                   messages = [...messages, `🚀 La matière ${sub} a été associée à ${new_user.firstName} ${new_user.lastName}`];
