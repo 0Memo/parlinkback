@@ -8,9 +8,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import * as redis from 'redis';
-/* import serverlessExpress from 'aws-serverless-express';
-import { Server } from 'http';
-let server: Server; */
 
 let redisClient: redis.RedisClientType;
 
@@ -68,18 +65,4 @@ export default async function bootstrap() {
 
   await app.listen(process.env.PORT || 3000);
   console.log(`L'application écoute sur le port: ${await app.getUrl()}`);
-
-  /* await app.init();
-  const expressApp = app.getHttpAdapter().getInstance();
-  return expressApp; */
 }
-
-/* bootstrap();
-
-export const handler = async (event: any, context: any) => {
-  if (!server) {
-    const expressApp = await bootstrap();
-    server = serverlessExpress.createServer(expressApp);
-  }
-  return serverlessExpress.proxy(server, event, context);
-}; */
