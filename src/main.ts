@@ -26,9 +26,6 @@ export default async function bootstrap() {
   });
   console.log('CORS configured.');
 
-  app.use(helmet());
-  console.log('Helmet configured.');
-
   redisClient = redis.createClient({
     url: process.env.REDIS_URL,
     socket: {
@@ -37,17 +34,7 @@ export default async function bootstrap() {
       connectTimeout: 10000,
     },
   });
-  
-  redisClient.on('error', (err) => {
-    console.error('Redis connection error:', err.message);
-  });
-  
-  try {
-    await redisClient.connect();
-    console.log('Redis client connected successfully.');
-  } catch (err) {
-    console.error('Failed to connect to Redis:', err.message);
-  }
+  await redisClient.connect();
 
   if (process.env.NODE_ENV === 'production') {
     console.log('Production mode detected.');
@@ -58,6 +45,9 @@ export default async function bootstrap() {
 
   app.use(compression());
 
+  app.use(helmet());
+  console.log('Helmet configured.');
+
   const config = new DocumentBuilder()
     .setTitle('alt-bootcamp')
     .setDescription('The alt-bootcamp API description')
@@ -67,6 +57,14 @@ export default async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   console.log('Swagger documentation configured.');
+
+  app.enableShutdownHooks();
+  app.getHttpAdapter().getInstance().on('close', async () => {
+    if (redisClient.isOpen) {
+      await redisClient.disconnect();
+      console.log('Redis client disconnected successfully.');
+    }
+  });
 
   await app.listen(process.env.PORT || 3000);
   console.log(`L'application écoute sur le port: ${await app.getUrl()}`);
