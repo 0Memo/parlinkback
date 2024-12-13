@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/* eslint-disable prettier/prettier */
 const fr_1 = require("@faker-js/faker/locale/fr");
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
@@ -238,8 +239,10 @@ const seed = async () => {
         for (let i = 0; i < categoryNames.length; i++) {
             categoryMap.set(categoryNames[i], categoryIds[i]);
         }
+        // Generate specific subcategories for each category
         const subCategories = await generateSubCategories(categoryMap);
         await Promise.all(subCategories.map(subCategory => prisma.subCategory.create({ data: subCategory })));
+        // Generate subjects, children, users, profiles, and associations
         const subjects = generateSubjects(5);
         const createdSubjects = await Promise.all(subjects.map(subject => prisma.subject.create({ data: subject })));
         const children = generateChildren(5);
@@ -290,4 +293,3 @@ seed()
     .finally(async () => {
     await prisma.$disconnect();
 });
-//# sourceMappingURL=seed.js.map
