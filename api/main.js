@@ -97,6 +97,18 @@ async function bootstrap() {
             next();
         });
     }
+    if (require.main === module) {
+        bootstrap().catch((err) => {
+            console.error('Failed to start the application:', err);
+            process.exit(1);
+        });
+    }
+    console.log('Environment Variables:', {
+        NODE_ENV: process.env.NODE_ENV,
+        PORT: process.env.PORT,
+        REDIS_URL: process.env.REDIS_URL,
+        DATABASE_URL: process.env.DATABASE_URL,
+    });
     await app.listen(process.env.PORT || 3000);
     console.log(`L'application écoute sur le port: ${await app.getUrl()}`);
 }
