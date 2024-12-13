@@ -2,7 +2,7 @@
     "version": 2,
     "functions": {
         "api/main.js": {
-        "runtime": "nodejs20",
+        "runtime": "nodejs22.x",
         "memory": 1024,
         "maxDuration": 10
     }
