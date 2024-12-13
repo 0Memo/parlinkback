@@ -23,20 +23,6 @@ export default async function bootstrap() {
   });
   console.log('CORS configured.');
 
-  redisClient = redis.createClient({
-    url: process.env.REDIS_URL,
-    socket: {
-      tls: true,
-      reconnectStrategy: () => 1000,
-      connectTimeout: 10000,
-    },
-  });
-  await redisClient.connect();
-
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Production mode detected.');
-  }
-
   app.useGlobalPipes(new ValidationPipe());
   console.log('Global validation pipe configured.');
 
@@ -63,7 +49,23 @@ export default async function bootstrap() {
     }
   });
 
+  const getRedisClient = async () => {
+    if (!redisClient) {
+      redisClient = redis.createClient({
+        url: process.env.REDIS_URL,
+        socket: {
+          tls: true,
+          reconnectStrategy: () => 1000,
+          connectTimeout: 10000,
+        },
+      });
+      await redisClient.connect();
+    }
+    return redisClient;
+  };
+
   if (process.env.NODE_ENV === 'production') {
+    console.log('Production mode detected.');
     app.use((req, res, next) => {
       if (!req.secure) {
         return res.redirect(`https://${req.headers.host}${req.url}`);
@@ -72,20 +74,13 @@ export default async function bootstrap() {
     });
   }
 
+  await app.listen(process.env.PORT || 3000);
+  console.log(`L'application écoute sur le port: ${await app.getUrl()}`);
+
   if (require.main === module) {
     bootstrap().catch((err) => {
       console.error('Failed to start the application:', err);
       process.exit(1);
     });
   }
-
-  console.log('Environment Variables:', {
-    NODE_ENV: process.env.NODE_ENV,
-    PORT: process.env.PORT,
-    REDIS_URL: process.env.REDIS_URL,
-    DATABASE_URL: process.env.DATABASE_URL,
-  });
-
-  await app.listen(process.env.PORT || 3000);
-  console.log(`L'application écoute sur le port: ${await app.getUrl()}`);
 }
