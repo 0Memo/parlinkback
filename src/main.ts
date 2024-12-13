@@ -4,6 +4,7 @@ dotenv.config();
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { createClient } from '@redis/client';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,6 +20,15 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe());
   console.log('Global validation pipe configured.');
+
+  const redisClient = createClient({
+    url: process.env.REDIS_URL,
+    socket: {
+      connectTimeout: 10000,
+    },
+  });
+  
+  redisClient.connect();
 
   if (process.env.NODE_ENV === 'production') {
     console.log('Production mode detected.');
