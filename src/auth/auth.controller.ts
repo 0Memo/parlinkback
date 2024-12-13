@@ -170,7 +170,7 @@ export class AuthController {
 
         const payload = { userId: user.id, role: user.role };
         const access_token = await this.jwtService.signAsync(payload, { secret: process.env.JWT_SECRET, expiresIn: '2m' })
-        const refresh_token = await this.jwtService.signAsync(payload, { secret: process.env.JWT_REFRESH_TOKEN, expiresIn: '3d' });
+        const refresh_token = await this.jwtService.signAsync(payload, { secret: process.env.JWT_REFRESH_TOKEN, expiresIn: '7d' });
         this.userService.update({ id: payload.userId }, { refreshToken: refresh_token });
         
 

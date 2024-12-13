@@ -89,6 +89,7 @@ async function bootstrap() {
             console.log('Redis client disconnected successfully.');
         }
     });
+    app.getHttpAdapter().get('/health', (_, res) => res.send('OK'));
     await app.listen(process.env.PORT || 3000);
     console.log(`L'application écoute sur le port: ${await app.getUrl()}`);
 }
