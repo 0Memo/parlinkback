@@ -7,7 +7,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PrismaModule = void 0;
-/* eslint-disable prettier/prettier */
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("./prisma.service");
 let PrismaModule = class PrismaModule {
@@ -19,3 +18,4 @@ exports.PrismaModule = PrismaModule = __decorate([
         exports: [prisma_service_1.PrismaService],
     })
 ], PrismaModule);
+//# sourceMappingURL=prisma.module.js.map

@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PRISMA_ERRORS = void 0;
-/* eslint-disable prettier/prettier */
 exports.PRISMA_ERRORS = {
     P2000: `The provided value for the column is too long for the column's type.`,
     P2001: `The record searched for in the where condition does not exist.`,
@@ -41,3 +40,4 @@ exports.PRISMA_ERRORS = {
     P2036: `Error in external connector (id {id})`,
     P2037: `Too many database connections opened: {message}`
 };
+//# sourceMappingURL=prisma.errors.js.map
