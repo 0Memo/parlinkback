@@ -1,11 +1,12 @@
 {
     "version": 2,
-    "builds": [
-        {
-            "src": "src/main.ts",
-            "use": "@vercel/node"
+    "functions": {
+        "api/main.js": {
+            "runtime": "nodejs22.x",
+            "memory": 1024,
+            "maxDuration": 10
         }
-    ],
+    },
     "routes": [
         {
             "src": "/.*",
