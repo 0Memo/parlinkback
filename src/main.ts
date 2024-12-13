@@ -41,11 +41,4 @@ async function bootstrap() {
   console.log(`L'application écoute sur le port: ${await app.getUrl()}`);
 }
 
-bootstrap().catch((err) => {
-  console.error('Failed to start the application:', err);
-  process.exit(1);
-});
-
-if (require.main === module) {
-  bootstrap();
-}
+export default bootstrap();
