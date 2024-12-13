@@ -50,7 +50,7 @@ let redisClient;
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.enableCors({
-        origin: 'https://parlink.vercel.app',
+        origin: ['https://parlink.vercel.app'],
         methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization', 'refresh_token'],
         exposedHeaders: ['Authorization'],
@@ -89,7 +89,14 @@ async function bootstrap() {
             console.log('Redis client disconnected successfully.');
         }
     });
-    app.getHttpAdapter().get('/health', (_, res) => res.send('OK'));
+    if (process.env.NODE_ENV === 'production') {
+        app.use((req, res, next) => {
+            if (!req.secure) {
+                return res.redirect(`https://${req.headers.host}${req.url}`);
+            }
+            next();
+        });
+    }
     await app.listen(process.env.PORT || 3000);
     console.log(`L'application écoute sur le port: ${await app.getUrl()}`);
 }
