@@ -15,16 +15,30 @@ export default async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: ['https://parlink.vercel.app'],
+    origin: 'https://parlink.vercel.app',
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization', 'refresh_token'],
     exposedHeaders: ['Authorization'],
     credentials: true,
   });
-  console.log('CORS configured.');
+  console.log(`CORS configured.`);
+
+  redisClient = redis.createClient({
+    url: process.env.REDIS_URL,
+    socket: {
+      tls: true,
+      reconnectStrategy: () => 1000,
+      connectTimeout: 10000,
+    },
+  });
+  await redisClient.connect();
+
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`Production mode detected.`);
+  }
 
   app.useGlobalPipes(new ValidationPipe());
-  console.log('Global validation pipe configured.');
+  console.log(`Global validation pipe configured.`);
 
   app.use(compression());
 
@@ -33,46 +47,21 @@ export default async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('alt-bootcamp')
-    .setDescription('The alt-bootcamp API description')
+    .setDescription(`The alt-bootcamp API description`)
     .setVersion('0.1')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  console.log('Swagger documentation configured.');
+  console.log(`Swagger documentation configured.`);
 
   app.enableShutdownHooks();
   app.getHttpAdapter().getInstance().on('close', async () => {
     if (redisClient.isOpen) {
       await redisClient.disconnect();
-      console.log('Redis client disconnected successfully.');
+      console.log(`Redis client disconnected successfully.`);
     }
   });
-
-  const getRedisClient = async () => {
-    if (!redisClient) {
-      redisClient = redis.createClient({
-        url: process.env.REDIS_URL,
-        socket: {
-          tls: true,
-          reconnectStrategy: () => 1000,
-          connectTimeout: 10000,
-        },
-      });
-      await redisClient.connect();
-    }
-    return redisClient;
-  };
-
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Production mode detected.');
-    app.use((req, res, next) => {
-      if (!req.secure) {
-        return res.redirect(`https://${req.headers.host}${req.url}`);
-      }
-      next();
-    });
-  }
 
   await app.listen(process.env.PORT || 3000);
   console.log(`L'application écoute sur le port: ${await app.getUrl()}`);

@@ -10,7 +10,7 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
-    "outDir": "./dist",
+    "outDir": "./api",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
