@@ -6,12 +6,11 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "prisma generate && nest build --config tsconfig.build.json",
+    "build": "prisma generate && nest build",
     "postinstall": "npm run build",
     "start": "node dist/src/main.js",
     "start:prod": "node dist/src/main.js",
     "start:dev": "ts-node-dev --watch src --project tsconfig.json src/main.ts",
-    "start:debug": "nest start --debug --watch",
     "prisma": "prisma generate"
   },
   "dependencies": {
