@@ -19,11 +19,11 @@ let app: any;
 async function bootstrap() {
   console.log(`Application NestJS en cours de démarrage...`);
 
-  app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule);
   console.log(`Application NestJS créée.`);
 
   app.use(helmet());
-  console.log(`Helmet configuré.`);
+  console.log('Helmet configuré.');
 
   const vercelUrl = process.env.VERCEL_URL;
 
@@ -48,17 +48,11 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(new ValidationPipe());
-  console.log(`Global validation pipe configuré.`);
-
-  app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor(), new SetHeadersInterceptor());
-  console.log(`Interceptors configurés.`);
-
-  app.useGlobalFilters(new HttpExceptionFilter(), new CustomHttpExceptionFilter());
-  console.log(`Global exception filters configurés.`);
+  console.log(`Global validation pipe configurés.`);
 
   app.use(compression());
   console.log(`Compression configurée.`);
-
+  
   if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {
       if (req.header('x-forwarded-proto') !== 'https' && process.env.NODE_ENV === 'production') {
@@ -79,7 +73,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  console.log(`Swagger documentation configured.`);
+  console.log(`Documentation Swagger configurée.`);
 
   await app.init();
   console.log(`Application initialisée.`);
