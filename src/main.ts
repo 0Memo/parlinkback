@@ -29,13 +29,18 @@ async function bootstrap() {
 
   const vercelUrl = process.env.VERCEL_URL;
 
-  redisClient = redis.createClient({
-    url: process.env.REDIS_URL,
-    socket: {
-      reconnectStrategy: () => 1000
-    }
-  });
-  await redisClient.connect();
+  try {
+    redisClient = redis.createClient({
+      url: process.env.REDIS_URL,
+      socket: {
+        reconnectStrategy: () => 1000,
+      },
+    });
+    await redisClient.connect();
+    console.log('Redis connected successfully');
+  } catch (error) {
+    console.error('Redis connection failed:', error);
+  }
 
   app.enableCors({
     origin: vercelUrl,
@@ -71,7 +76,7 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {
-      if (req.header('x-forwarded-proto') !== 'https') {
+      if (req.header('x-forwarded-proto') !== 'https' && process.env.NODE_ENV === 'production') {
         res.redirect(`https://${req.header('host')}${req.url}`);
       } else {
         next();
