@@ -37,12 +37,28 @@ async function bootstrap() {
   const expressApp = app.getHttpAdapter().getInstance();
 
   expressApp.options('*', (req: Request, res: Response) => {
-    res.header('Access-Control-Allow-Origin', req.get('origin') || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Origin, X-Requested-With, Accept, Authorization, refresh_token');
-    res.header('Access-Control-Expose-Headers', 'Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.sendStatus(HttpStatus.NO_CONTENT);
+    const origin = req.get('origin');
+    const allowedOrigins = ['https://parlink.vercel.app'];
+  
+    if (!origin || allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin || '*');
+      res.header('Access-Control-Allow-Methods', 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS');
+      res.header(
+        'Access-Control-Allow-Headers', 
+        'Content-Type, Origin, X-Requested-With, Accept, Authorization, refresh_token'
+      );
+      res.header('Access-Control-Expose-Headers', 'Authorization');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.sendStatus(HttpStatus.NO_CONTENT);
+    } else {
+      res.status(HttpStatus.FORBIDDEN).send(`Non autorisé par CORS`);
+    }
+  });
+
+  app.use((req, res, next) => {
+    console.log(`Incoming Request: ${req.method} ${req.url}`);
+    console.log(`Headers: ${JSON.stringify(req.headers)}`);
+    next();
   });
 
   app.useGlobalPipes(new ValidationPipe());
