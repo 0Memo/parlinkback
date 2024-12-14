@@ -25,10 +25,8 @@ async function bootstrap() {
   app.use(helmet());
   console.log('Helmet configuré.');
 
-  const vercelUrl = process.env.VERCEL_URL;
-
   app.enableCors({
-    origin: vercelUrl,
+    origin: ['https://parlink.vercel.app'],
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization', 'refresh_token'],
     exposedHeaders: ['Authorization'],
@@ -79,8 +77,12 @@ async function bootstrap() {
   console.log(`Application initialisée.`);
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
-  console.log(`L'application NestJS écoute sur le port ${port}.`);
+  try {
+    await app.listen(port);
+    console.log(`Application is running on port ${port}`);
+  } catch (error) {
+    console.error('Error during application startup:', error);
+  }
 }
 
 export default async function handler(req: Request, res: Response) {
