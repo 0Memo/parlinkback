@@ -71,7 +71,7 @@ const generateCategories = async () => {
 
     for (const name of categoryNames) {
         const existingCategory = await prisma.category.findUnique({
-            where: { name },
+            where: { name, id: '' },
         });
         if (!existingCategory) {
             const createdCategory = await prisma.category.create({
