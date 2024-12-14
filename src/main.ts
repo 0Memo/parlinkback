@@ -31,8 +31,9 @@ export default async function bootstrap() {
       connectTimeout: 10000,
     },
   });
-  redisClient.on('error', err => {
+  redisClient.on('error', (err) => {
     console.error('Redis connection error:', err);
+    process.exit(1);
   });
   await redisClient.connect();
 
