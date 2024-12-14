@@ -27,9 +27,12 @@ export default async function bootstrap() {
     url: process.env.REDIS_URL,
     socket: {
       tls: true,
-      reconnectStrategy: () => 1000,
+      reconnectStrategy: retries => Math.min(retries * 100, 3000),
       connectTimeout: 10000,
     },
+  });
+  redisClient.on('error', err => {
+    console.error('Redis connection error:', err);
   });
   await redisClient.connect();
 

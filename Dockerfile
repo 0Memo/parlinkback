@@ -22,8 +22,14 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Set environment variables
+ENV NODE_ENV=production
+
 # Build the application => TJ => JS
 RUN npm run build
 
+# Expose the application port (default Railway port environment variable will be used)
+EXPOSE 3000
+
 # Start the app
-CMD [ "npm", "run", "start:prod" ]
+CMD [ "node", "api/main.js" ]
