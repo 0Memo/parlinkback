@@ -31,7 +31,15 @@ async function bootstrap() {
   console.log('Helmet configuré.');
 
   app.enableCors({
-    origin: [localhostUrl, ipv4Url, vercelUrl],
+    origin: (origin, callback) => {
+      const allowedOrigins = [localhostUrl, ipv4Url, vercelUrl, 'https://parlinkback.up.railway.app'];
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.error(`CORS blocked request from origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization', 'refresh_token'],
     exposedHeaders: ['Authorization'],
@@ -44,16 +52,20 @@ async function bootstrap() {
     socket: {
       tls: true,
       reconnectStrategy: () => 1000,
-      connectTimeout: 10000,
+      connectTimeout: 30000,
     },
   });
   await redisClient.connect();
+  redisClient.on('connect', () => console.log('Connected to Redis.'));
+  redisClient.on('error', (err) => console.error('Redis connection error:', err));
+
 
   const expressApp = app.getHttpAdapter().getInstance();
 
   expressApp.options('*', (req: Request, res: Response) => {
+    console.log(`CORS preflight for Origin: ${req.get('origin')}`);
     const origin = req.get('origin');
-    const allowedOrigins = [localhostUrl, ipv4Url, vercelUrl];
+    const allowedOrigins = [localhostUrl, ipv4Url, vercelUrl, 'https://parlinkback.up.railway.app'];
   
     if (!origin || allowedOrigins.includes(origin)) {
       res.header('Access-Control-Allow-Origin', origin || '*');
@@ -66,13 +78,13 @@ async function bootstrap() {
       res.header('Access-Control-Allow-Credentials', 'true');
       res.sendStatus(HttpStatus.NO_CONTENT);
     } else {
+      console.log(`CORS blocked for Origin: ${origin}`);
       res.status(HttpStatus.FORBIDDEN).send(`Non autorisé par CORS`);
     }
   });
 
   app.use((req, res, next) => {
-    console.log(`Incoming Request: ${req.method} ${req.url}`);
-    console.log(`Headers: ${JSON.stringify(req.headers)}`);
+    console.log(`[${req.method}] ${req.url} - Origin: ${req.headers.origin}`);
     next();
   });
 
@@ -88,17 +100,14 @@ async function bootstrap() {
   app.use(compression());
   console.log(`Compression configurée.`);
   
-  if (process.env.NODE_ENV === 'production') {
-    app.use((req, res, next) => {
-      if (req.header('x-forwarded-proto') !== 'https' && process.env.NODE_ENV === 'production') {
-        res.redirect(`https://${req.header('host')}${req.url}`);
-      } else {
-        next();
-      }
-    });
-
-    console.log(`Redirection HTTP vers HTTPS activée.`);
-  }
+  app.use((req, res, next) => {
+    const proto = req.header('x-forwarded-proto');
+    console.log(`Protocol: ${proto}`);
+    if (proto !== 'https' && process.env.NODE_ENV === 'production') {
+      return res.redirect(`https://${req.header('host')}${req.url}`);
+    }
+    next();
+  });  
 
   const config = new DocumentBuilder()
     .setTitle('alt-bootcamp')

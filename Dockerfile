@@ -29,7 +29,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # Expose the application port (default Railway port environment variable will be used)
-EXPOSE 3000
+EXPOSE ${PORT:-3000}
 
 # Start the app
 CMD ["npm", "run", "start:prod"]
