@@ -66,7 +66,12 @@ async function bootstrap() {
       connectTimeout: 30000,
     },
   });
+  redisClient.on('error', (err) => {
+    Logger.error('Redis connection error: ', err);
+  });
+  
   await redisClient.connect();
+  Logger.log('Connected to Redis.');
 
   if (process.env.NODE_ENV === 'production') {
     console.log(`Production mode detected.`);
@@ -93,7 +98,8 @@ async function bootstrap() {
     }
   });
 
-  await app.listen(process.env.PORT || 3000);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
   Logger.log(`Application listening on port ${process.env.PORT || 3000}`);
 }
 
