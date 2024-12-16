@@ -1,156 +1,113 @@
 /* eslint-disable prettier/prettier */
 import * as dotenv from 'dotenv';
 dotenv.config();
+
 import compression from 'compression';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, HttpStatus, Logger } from '@nestjs/common';
+import helmet from 'helmet';
+import * as redis from 'redis';
 import { HttpExceptionFilter } from './filters/http-exception.filters';
 import { CustomHttpExceptionFilter } from './filters/custom-exception.filters';
 import { LoggingInterceptor } from './interceptors/logging.interceptors';
 import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
-import helmet from 'helmet';
-import * as redis from 'redis';
 import { Request, Response } from 'express';
 
 let redisClient: redis.RedisClientType;
 
 async function bootstrap() {
-  console.log(`Application NestJS en cours de démarrage...`);
+  Logger.log('Starting NestJS application...');
 
   const app = await NestFactory.create(AppModule);
-  console.log(`Application NestJS créée.`);
 
-  const localhostUrl = process.env.LOCALHOST_URL;
-  const ipv4Url = process.env.IPV4_URL;
-  const vercelUrl = process.env.VERCEL_URL;
+  const { LOCALHOST_URL, IPV4_URL, VERCEL_URL, REDIS_URL } = process.env;
 
   app.use(helmet());
-  console.log('Helmet configuré.');
+  Logger.log('Helmet middleware enabled.');
 
+  // CORS configuration
+  const allowedOrigins = [
+    LOCALHOST_URL,
+    IPV4_URL,
+    VERCEL_URL,
+    'https://parlinkback.up.railway.app',
+  ];
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = [localhostUrl, ipv4Url, vercelUrl, 'https://parlinkback.up.railway.app'];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        console.error(`CORS blocked request from origin: ${origin}`);
+        Logger.warn(`Blocked by CORS: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization', 'refresh_token'],
+    allowedHeaders: [
+      'Content-Type',
+      'Origin',
+      'X-Requested-With',
+      'Accept',
+      'Authorization',
+      'refresh_token',
+    ],
     exposedHeaders: ['Authorization'],
     credentials: true,
   });
-  console.log(`CORS configurés.`);
+  Logger.log('CORS configured.');
 
+  // Redis setup
   try {
-    redisClient = redis.createClient({
-      url: process.env.REDIS_URL,
-    });
-
-    redisClient.on('error', (err) => {
-      Logger.error(`Redis error: ${err.message}`);
-    });
-
-    redisClient.on('connect', () => {
-      Logger.log('Connected to Redis successfully!');
-    });
-
+    redisClient = redis.createClient({ url: REDIS_URL });
+    redisClient.on('error', (err) => Logger.error(`Redis error: ${err.message}`));
+    redisClient.on('connect', () => Logger.log('Redis connected successfully.'));
     await redisClient.connect();
   } catch (err) {
     Logger.error(`Failed to connect to Redis: ${err.message}`);
-    process.exit(1); // Exit the application if Redis fails to connect
+    process.exit(1);
   }
 
-  const expressApp = app.getHttpAdapter().getInstance();
-
-  expressApp.options('*', (req: Request, res: Response) => {
-    console.log(`CORS preflight for Origin: ${req.get('origin')}`);
-    const origin = req.get('origin');
-    const allowedOrigins = [localhostUrl, ipv4Url, vercelUrl, 'https://parlinkback.up.railway.app'];
-  
-    if (!origin || allowedOrigins.includes(origin)) {
-      res.header('Access-Control-Allow-Origin', origin || '*');
-      res.header('Access-Control-Allow-Methods', 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS');
-      res.header(
-        'Access-Control-Allow-Headers', 
-        'Content-Type, Origin, X-Requested-With, Accept, Authorization, refresh_token'
-      );
-      res.header('Access-Control-Expose-Headers', 'Authorization');
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.sendStatus(HttpStatus.NO_CONTENT);
-    } else {
-      console.log(`CORS blocked for Origin: ${origin}`);
-      res.status(HttpStatus.FORBIDDEN).send(`Non autorisé par CORS`);
+  // Middleware: HTTP to HTTPS redirection
+  app.use((req: Request, res: Response, next) => {
+    if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
+      return res.redirect(`https://${req.header('host')}${req.url}`);
     }
-  });
-
-  app.use((req, res, next) => {
-    console.log(`[${req.method}] ${req.url} - Origin: ${req.headers.origin}`);
     next();
   });
 
   app.useGlobalPipes(new ValidationPipe());
-  console.log(`Global validation pipe configurés.`);
-
   app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor(), new SetHeadersInterceptor());
-  console.log('Interceptors configurés.');
-
   app.useGlobalFilters(new HttpExceptionFilter(), new CustomHttpExceptionFilter());
-  console.log('Global exception filters configurés.');
-
   app.use(compression());
-  console.log(`Compression configurée.`);
-  
-  app.use((req, res, next) => {
-    const proto = req.header('x-forwarded-proto');
-    console.log(`Protocol: ${proto}`);
-    if (proto !== 'https' && process.env.NODE_ENV === 'production') {
-      return res.redirect(`https://${req.header('host')}${req.url}`);
-    }
-    next();
-  });  
 
+  // Swagger setup
   const config = new DocumentBuilder()
     .setTitle('alt-bootcamp')
-    .setDescription(`The alt-bootcamp API description`)
+    .setDescription('API documentation for alt-bootcamp')
     .setVersion('0.1')
     .build();
-
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  console.log(`Documentation Swagger configurée.`);
 
   app.enableShutdownHooks();
   app.getHttpAdapter().getInstance().on('close', async () => {
-    if (redisClient.isOpen) {
-      await redisClient.disconnect();
-      console.log(`Redis client disconnected successfully.`);
-    }
+    if (redisClient.isOpen) await redisClient.disconnect();
   });
 
   process.on('SIGINT', async () => {
-    if (redisClient.isOpen) {
-      await redisClient.disconnect();
-      console.log(`Redis client disconnected on SIGINT.`);
-    }
+    if (redisClient.isOpen) await redisClient.disconnect();
     process.exit(0);
   });
 
   process.on('SIGTERM', async () => {
-    if (redisClient.isOpen) {
-      await redisClient.disconnect();
-      console.log(`Redis client disconnected on SIGTERM.`);
-    }
+    if (redisClient.isOpen) await redisClient.disconnect();
     process.exit(0);
   });
 
   await app.listen(process.env.PORT || 3000);
-  console.log(`L'application NestJS écoute sur le port 3000.`);
+  Logger.log(`Application listening on port ${process.env.PORT || 3000}`);
 }
 
 bootstrap();
