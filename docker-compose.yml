@@ -23,7 +23,6 @@ services:
       - "3000:3000"
     depends_on:
       - mariadb
-      - redis
     networks:
       - redis_network
       - db_network

@@ -8,13 +8,14 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, HttpStatus, Logger } from '@nestjs/common';
 import helmet from 'helmet';
-import { createClient, RedisClientType } from '@redis/client';  // Updated to use createClient
+import { createClient, RedisClientType } from '@redis/client';
 import { HttpExceptionFilter } from './filters/http-exception.filters';
 import { CustomHttpExceptionFilter } from './filters/custom-exception.filters';
 import { LoggingInterceptor } from './interceptors/logging.interceptors';
 import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 import { Request, Response } from 'express';
+import * as redis from 'redis';
 
 let redisClient: RedisClientType;
 
@@ -60,21 +61,30 @@ async function bootstrap() {
 
   try {
     redisClient = createClient({
-      url: REDIS_URL,
+      url: process.env.REDIS_URL,
       socket: {
-        tls: REDIS_URL.startsWith('rediss://'),
+        tls: true,
         rejectUnauthorized: false,
+        connectTimeout: 30000,
       },
     });
-    
     redisClient.on('error', (err) => Logger.error(`Redis error: ${err.message}`));
     redisClient.on('connect', () => Logger.log('Redis connected successfully.'));
-    
     await redisClient.connect();
   } catch (err) {
     Logger.error(`Failed to connect to Redis: ${err.message}`);
-    process.exit(1);
   }
+
+  setInterval(async () => {
+    if (!redisClient.isOpen) {
+      try {
+        Logger.log('Attempting to reconnect to Redis...');
+        await redisClient.connect();
+      } catch (err) {
+        Logger.error(`Failed to reconnect to Redis: ${err.message}`);
+      }
+    }
+  }, 30000);
 
   app.use((req: Request, res: Response, next) => {
     if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
