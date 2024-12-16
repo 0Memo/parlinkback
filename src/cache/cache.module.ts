@@ -14,7 +14,7 @@ import { redisStore } from 'cache-manager-redis-yet';
                         ttl: 600,
                         socket: {
                             tls: false,
-                            connectTimeout: 10000,
+                            connectTimeout: 30000,
                         },
                     });
 

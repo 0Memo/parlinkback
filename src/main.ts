@@ -59,46 +59,25 @@ async function bootstrap() {
   });
   Logger.log('CORS configured.');
 
-  try {
-    redisClient = createClient({
-      url: process.env.REDIS_URL,
-      socket: {
-        tls: true,
-        rejectUnauthorized: false,
-        connectTimeout: 30000,
-      },
-    });
-    redisClient.on('error', (err) => Logger.error(`Redis error: ${err.message}`));
-    redisClient.on('connect', () => Logger.log('Redis connected successfully.'));
-    await redisClient.connect();
-  } catch (err) {
-    Logger.error(`Failed to connect to Redis: ${err.message}`);
-  }
-
-  setInterval(async () => {
-    if (!redisClient.isOpen) {
-      try {
-        Logger.log('Attempting to reconnect to Redis...');
-        await redisClient.connect();
-      } catch (err) {
-        Logger.error(`Failed to reconnect to Redis: ${err.message}`);
-      }
-    }
-  }, 30000);
-
-  app.use((req: Request, res: Response, next) => {
-    if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
-      return res.redirect(`https://${req.header('host')}${req.url}`);
-    }
-    next();
+  redisClient = redis.createClient({
+    url: process.env.REDIS_URL,
+    socket: {
+      tls: true,
+      reconnectStrategy: () => 1000,
+      connectTimeout: 10000,
+    },
   });
+  await redisClient.connect();
+
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`Production mode detected.`);
+  }
 
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor(), new SetHeadersInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter(), new CustomHttpExceptionFilter());
   app.use(compression());
 
-  // Swagger setup
   const config = new DocumentBuilder()
     .setTitle('alt-bootcamp')
     .setDescription('API documentation for alt-bootcamp')
@@ -109,17 +88,10 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
   app.getHttpAdapter().getInstance().on('close', async () => {
-    if (redisClient.isOpen) await redisClient.disconnect();
-  });
-
-  process.on('SIGINT', async () => {
-    if (redisClient.isOpen) await redisClient.disconnect();
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', async () => {
-    if (redisClient.isOpen) await redisClient.disconnect();
-    process.exit(0);
+    if (redisClient.isOpen) {
+      await redisClient.disconnect();
+      console.log(`Redis client disconnected successfully.`);
+    }
   });
 
   await app.listen(process.env.PORT || 3000);
