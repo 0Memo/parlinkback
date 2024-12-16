@@ -5,7 +5,7 @@ import compression from 'compression';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe, HttpStatus } from '@nestjs/common';
+import { ValidationPipe, HttpStatus, Logger } from '@nestjs/common';
 import { HttpExceptionFilter } from './filters/http-exception.filters';
 import { CustomHttpExceptionFilter } from './filters/custom-exception.filters';
 import { LoggingInterceptor } from './interceptors/logging.interceptors';
@@ -47,18 +47,24 @@ async function bootstrap() {
   });
   console.log(`CORS configurés.`);
 
-  redisClient = redis.createClient({
-    url: process.env.REDIS_URL,
-    socket: {
-      tls: true,
-      reconnectStrategy: () => 1000,
-      connectTimeout: 30000,
-    },
-  });
-  await redisClient.connect();
-  redisClient.on('connect', () => console.log('Connected to Redis.'));
-  redisClient.on('error', (err) => console.error('Redis connection error:', err));
+  try {
+    redisClient = redis.createClient({
+      url: process.env.REDIS_URL,
+    });
 
+    redisClient.on('error', (err) => {
+      Logger.error(`Redis error: ${err.message}`);
+    });
+
+    redisClient.on('connect', () => {
+      Logger.log('Connected to Redis successfully!');
+    });
+
+    await redisClient.connect();
+  } catch (err) {
+    Logger.error(`Failed to connect to Redis: ${err.message}`);
+    process.exit(1); // Exit the application if Redis fails to connect
+  }
 
   const expressApp = app.getHttpAdapter().getInstance();
 
@@ -125,6 +131,22 @@ async function bootstrap() {
       await redisClient.disconnect();
       console.log(`Redis client disconnected successfully.`);
     }
+  });
+
+  process.on('SIGINT', async () => {
+    if (redisClient.isOpen) {
+      await redisClient.disconnect();
+      console.log(`Redis client disconnected on SIGINT.`);
+    }
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    if (redisClient.isOpen) {
+      await redisClient.disconnect();
+      console.log(`Redis client disconnected on SIGTERM.`);
+    }
+    process.exit(0);
   });
 
   await app.listen(process.env.PORT || 3000);
