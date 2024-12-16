@@ -8,7 +8,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, HttpStatus, Logger } from '@nestjs/common';
 import helmet from 'helmet';
-import * as redis from 'redis';
+import { createClient, RedisClientType } from '@redis/client';  // Updated to use createClient
 import { HttpExceptionFilter } from './filters/http-exception.filters';
 import { CustomHttpExceptionFilter } from './filters/custom-exception.filters';
 import { LoggingInterceptor } from './interceptors/logging.interceptors';
@@ -16,7 +16,7 @@ import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 import { Request, Response } from 'express';
 
-let redisClient: redis.RedisClientType;
+let redisClient: RedisClientType;
 
 async function bootstrap() {
   Logger.log('Starting NestJS application...');
@@ -58,18 +58,24 @@ async function bootstrap() {
   });
   Logger.log('CORS configured.');
 
-  // Redis setup
   try {
-    redisClient = redis.createClient({ url: REDIS_URL });
+    redisClient = createClient({
+      url: REDIS_URL,
+      socket: {
+        tls: REDIS_URL.startsWith('rediss://'),
+        rejectUnauthorized: false,
+      },
+    });
+    
     redisClient.on('error', (err) => Logger.error(`Redis error: ${err.message}`));
     redisClient.on('connect', () => Logger.log('Redis connected successfully.'));
+    
     await redisClient.connect();
   } catch (err) {
     Logger.error(`Failed to connect to Redis: ${err.message}`);
     process.exit(1);
   }
 
-  // Middleware: HTTP to HTTPS redirection
   app.use((req: Request, res: Response, next) => {
     if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
       return res.redirect(`https://${req.header('host')}${req.url}`);
