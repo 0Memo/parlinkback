@@ -5,7 +5,7 @@ import compression from 'compression';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe, HttpStatus, Logger } from '@nestjs/common';
+import { ValidationPipe, HttpStatus } from '@nestjs/common';
 import { HttpExceptionFilter } from './filters/http-exception.filters';
 import { CustomHttpExceptionFilter } from './filters/custom-exception.filters';
 import { LoggingInterceptor } from './interceptors/logging.interceptors';
@@ -15,7 +15,7 @@ import helmet from 'helmet';
 import * as redis from 'redis';
 import { Request, Response } from 'express';
 
-let redisClient: redis.RedisClientType;
+// let redisClient: redis.RedisClientType;
 
 async function bootstrap() {
   console.log(`Application NestJS en cours de démarrage...`);
@@ -47,23 +47,16 @@ async function bootstrap() {
   });
   console.log(`CORS configurés.`);
 
+  const redisClient = redis.createClient({
+    url: process.env.REDIS_URL,
+  });
+
   try {
-    redisClient = redis.createClient({
-      url: process.env.REDIS_URL,
-    });
-
-    redisClient.on('error', (err) => {
-      Logger.error(`Redis error: ${err.message}`);
-    });
-
-    redisClient.on('connect', () => {
-      Logger.log('Connected to Redis successfully!');
-    });
-
     await redisClient.connect();
+    console.log('Redis client connected successfully.');
   } catch (err) {
-    Logger.error(`Failed to connect to Redis: ${err.message}`);
-    process.exit(1); // Exit the application if Redis fails to connect
+    console.error(`Redis connection failed: ${err.message}`);
+    throw new Error('Redis initialization failed. Application cannot proceed.');
   }
 
   const expressApp = app.getHttpAdapter().getInstance();
@@ -104,16 +97,7 @@ async function bootstrap() {
   console.log('Global exception filters configurés.');
 
   app.use(compression());
-  console.log(`Compression configurée.`);
-  
-  app.use((req, res, next) => {
-    const proto = req.header('x-forwarded-proto');
-    console.log(`Protocol: ${proto}`);
-    if (proto !== 'https' && process.env.NODE_ENV === 'production') {
-      return res.redirect(`https://${req.header('host')}${req.url}`);
-    }
-    next();
-  });  
+  console.log(`Compression configurée.`); 
 
   const config = new DocumentBuilder()
     .setTitle('alt-bootcamp')
@@ -125,31 +109,17 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
   console.log(`Documentation Swagger configurée.`);
 
-  app.enableShutdownHooks();
-  app.getHttpAdapter().getInstance().on('close', async () => {
-    if (redisClient.isOpen) {
-      await redisClient.disconnect();
-      console.log(`Redis client disconnected successfully.`);
-    }
-  });
+  if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+      if (req.protocol === 'http') {
+        return res.redirect(301, `https://${req.headers.host}${req.url}`);
+      }
+      next();
+    });
+  }
 
-  process.on('SIGINT', async () => {
-    if (redisClient.isOpen) {
-      await redisClient.disconnect();
-      console.log(`Redis client disconnected on SIGINT.`);
-    }
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', async () => {
-    if (redisClient.isOpen) {
-      await redisClient.disconnect();
-      console.log(`Redis client disconnected on SIGTERM.`);
-    }
-    process.exit(0);
-  });
-
-  await app.listen(process.env.PORT || 3000);
+  const port = parseInt(process.env.PORT, 10) || 3000;
+  await app.listen(port);
   console.log(`L'application NestJS écoute sur le port 3000.`);
 }
 
