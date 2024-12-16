@@ -12,7 +12,10 @@ import { LoggingInterceptor } from './interceptors/logging.interceptors';
 import { TransformInterceptor } from './interceptors/transform.interceptors';
 import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 import helmet from 'helmet';
+import * as redis from 'redis';
 import { Request, Response } from 'express';
+
+let redisClient: redis.RedisClientType;
 
 async function bootstrap() {
   console.log(`Application NestJS en cours de démarrage...`);
@@ -35,6 +38,16 @@ async function bootstrap() {
     credentials: true,
   });
   console.log(`CORS configurés.`);
+
+  redisClient = redis.createClient({
+    url: process.env.REDIS_URL,
+    socket: {
+      tls: true,
+      reconnectStrategy: () => 1000,
+      connectTimeout: 10000,
+    },
+  });
+  await redisClient.connect();
 
   const expressApp = app.getHttpAdapter().getInstance();
 
@@ -96,6 +109,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   console.log(`Documentation Swagger configurée.`);
+
+  app.enableShutdownHooks();
+  app.getHttpAdapter().getInstance().on('close', async () => {
+    if (redisClient.isOpen) {
+      await redisClient.disconnect();
+      console.log(`Redis client disconnected successfully.`);
+    }
+  });
+
   await app.listen(process.env.PORT || 3000);
   console.log(`L'application NestJS écoute sur le port 3000.`);
 }
