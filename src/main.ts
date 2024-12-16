@@ -14,19 +14,21 @@ import { SetHeadersInterceptor } from './interceptors/set-headers.interceptors';
 import helmet from 'helmet';
 import { Request, Response } from 'express';
 
-let app: any;
-
 async function bootstrap() {
   console.log(`Application NestJS en cours de démarrage...`);
 
   const app = await NestFactory.create(AppModule);
   console.log(`Application NestJS créée.`);
 
+  const localhostUrl = process.env.LOCALHOST_URL;
+  const ipv4Url = process.env.IPV4_URL;
+  const vercelUrl = process.env.VERCEL_URL;
+
   app.use(helmet());
   console.log('Helmet configuré.');
 
   app.enableCors({
-    origin: ['https://parlink.vercel.app'],
+    origin: [localhostUrl, ipv4Url, vercelUrl],
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'Authorization', 'refresh_token'],
     exposedHeaders: ['Authorization'],
@@ -38,7 +40,7 @@ async function bootstrap() {
 
   expressApp.options('*', (req: Request, res: Response) => {
     const origin = req.get('origin');
-    const allowedOrigins = ['https://parlink.vercel.app'];
+    const allowedOrigins = [localhostUrl, ipv4Url, vercelUrl];
   
     if (!origin || allowedOrigins.includes(origin)) {
       res.header('Access-Control-Allow-Origin', origin || '*');
@@ -64,6 +66,12 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   console.log(`Global validation pipe configurés.`);
 
+  app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor(), new SetHeadersInterceptor());
+  console.log('Interceptors configurés.');
+
+  app.useGlobalFilters(new HttpExceptionFilter(), new CustomHttpExceptionFilter());
+  console.log('Global exception filters configurés.');
+
   app.use(compression());
   console.log(`Compression configurée.`);
   
@@ -88,23 +96,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   console.log(`Documentation Swagger configurée.`);
-
-  await app.init();
-  console.log(`Application initialisée.`);
-
-  const port = process.env.PORT || 3000;
-  try {
-    await app.listen(port, '0.0.0.0');
-    console.log(`Application is running on port ${port}`);
-  } catch (error) {
-    console.error('Error during application startup:', error);
-  }
+  await app.listen(process.env.PORT || 3000);
+  console.log(`L'application NestJS écoute sur le port 3000.`);
 }
 
-export default async function handler(req: Request, res: Response) {
-  if (!app) {
-    await bootstrap();
-  }
-
-  app.getHttpAdapter().getInstance()(req, res);
-}
+bootstrap();
