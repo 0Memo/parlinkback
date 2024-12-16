@@ -4,7 +4,6 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { CacheService } from './cache.service';
 import { redisStore } from 'cache-manager-redis-yet';
 
-// const redisUrl = process.env.REDIS_URL;
 @Module({
     imports: [
         CacheModule.registerAsync({
@@ -14,8 +13,7 @@ import { redisStore } from 'cache-manager-redis-yet';
                         url: process.env.REDIS_URL,
                         ttl: 600,
                         socket: {
-                            tls: true,
-                            rejectUnauthorized: false,
+                            tls: false,
                             connectTimeout: 10000,
                         },
                     });
