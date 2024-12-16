@@ -13,7 +13,6 @@ import { redisStore } from 'cache-manager-redis-yet';
                         url: process.env.REDIS_URL,
                         ttl: 600,
                         socket: {
-                            tls: false,
                             connectTimeout: 30000,
                         },
                     });

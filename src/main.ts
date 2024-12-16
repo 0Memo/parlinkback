@@ -62,9 +62,8 @@ async function bootstrap() {
   redisClient = redis.createClient({
     url: process.env.REDIS_URL,
     socket: {
-      tls: true,
       reconnectStrategy: () => 1000,
-      connectTimeout: 10000,
+      connectTimeout: 30000,
     },
   });
   await redisClient.connect();
