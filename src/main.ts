@@ -60,7 +60,7 @@ async function bootstrap() {
   Logger.log('CORS configured.');
 
   redisClient = redis.createClient({
-    url: process.env.REDIS_URL,
+    url: REDIS_URL,
     socket: {
       reconnectStrategy: () => 1000,
       connectTimeout: 30000,
@@ -69,7 +69,7 @@ async function bootstrap() {
   redisClient.on('error', (err) => {
     Logger.error('Redis connection error: ', err);
   });
-  
+
   await redisClient.connect();
   Logger.log('Connected to Redis.');
 
