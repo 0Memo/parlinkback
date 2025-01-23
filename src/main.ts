@@ -35,6 +35,7 @@ async function bootstrap() {
     IPV4_URL,
     VERCEL_URL,
     'https://parlinkback.up.railway.app',
+    'http:localhost:5173'
   ];
   app.enableCors({
     origin: (origin, callback) => {
